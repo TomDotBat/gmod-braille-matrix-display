@@ -73,6 +73,7 @@ local function create_canvas() --Canvas class
         min_col, max_col = 0, 0
     end
 
+    local insert = table.insert
     function tbl:get_draw_data()
         local output = {}
         local matrix = pixel_matrix
@@ -84,11 +85,11 @@ local function create_canvas() --Canvas class
             for col = 1, width do
                 if matrix[row] and matrix[row][col] then
                     local pixel = matrix[row][col]
-                    table.insert(row_data, pixel:get_color())
-                    table.insert(row_data, pixel:get_str())
+                    insert(row_data, pixel:get_color())
+                    insert(row_data, pixel:get_str())
                 else
-                    table.insert(row_data, blank_color)
-                    table.insert(row_data, space_char)
+                    insert(row_data, blank_color)
+                    insert(row_data, space_char)
                 end
             end
         end
