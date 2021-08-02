@@ -176,82 +176,80 @@ timer.Create("DumbIdea.WaitForHTMLMat", .5, 10, function() --HTML mat isn't read
 end)
 
 
-do --Draw stuff
-    local font = "DermaLarge"
+local font = "DermaLarge"
 
-    local frame_time = 1 / video_frame_rate
-    local frame_progress = 0
+local frame_time = 1 / video_frame_rate
+local frame_progress = 0
 
-    local draw_data = {}
+local draw_data = {}
 
-    local is_string = isstring
-    local get_frame_time = FrameTime
-    local screen_width, screen_height = ScrW, ScrH
-    local set_draw_color, draw_rect = surface.SetDrawColor, surface.DrawRect
-    local set_font, get_text_size = surface.SetFont, surface.GetTextSize
-    local set_text_pos, set_text_color, draw_text = surface.SetTextPos, surface.SetTextColor, surface.DrawText
+local is_string = isstring
+local get_frame_time = FrameTime
+local screen_width, screen_height = ScrW, ScrH
+local set_draw_color, draw_rect = surface.SetDrawColor, surface.DrawRect
+local set_font, get_text_size = surface.SetFont, surface.GetTextSize
+local set_text_pos, set_text_color, draw_text = surface.SetTextPos, surface.SetTextColor, surface.DrawText
 
-    --hook.Add("Think", "dumb_idea", function() --Draws in the console
-    --    if frame_progress >= frame_time then
-    --        if update_rt then
-    --            update_rt()
-    --            draw_data = canvas:get_draw_data()
+--hook.Add("Think", "dumb_idea", function() --Draws in the console
+--    if frame_progress >= frame_time then
+--        if update_rt then
+--            update_rt()
+--            draw_data = canvas:get_draw_data()
 --
 --
-    --            local canvas_width, canvas_height = canvas:get_size()
-    --            for row = 1, canvas_height do
-    --                local row_data = draw_data[row]
+--            local canvas_width, canvas_height = canvas:get_size()
+--            for row = 1, canvas_height do
+--                local row_data = draw_data[row]
 --
-    --                for col = 1, canvas_width * 2, 2 do
-    --                    MsgC(row_data[col], row_data[col + 1])
-    --                end
-    --                Msg("\n")
-    --            end
-    --        end
-    --        frame_progress = 0
-    --    end
+--                for col = 1, canvas_width * 2, 2 do
+--                    MsgC(row_data[col], row_data[col + 1])
+--                end
+--                Msg("\n")
+--            end
+--        end
+--        frame_progress = 0
+--    end
 --
-    --    frame_progress = frame_progress + get_frame_time()
-    --end)
+--    frame_progress = frame_progress + get_frame_time()
+--end)
 
-    hook.Add("HUDPaint", "dumb_idea", function() --Draws in the center of the screen
-        set_draw_color(0, 0, 0, 255)
-        draw_rect(0, 0, screen_width(), screen_height())
+hook.Add("HUDPaint", "dumb_idea", function() --Draws in the center of the screen
+    set_draw_color(0, 0, 0, 255)
+    draw_rect(0, 0, screen_width(), screen_height())
 
-        if frame_progress >= frame_time then
-            if update_rt then
-                update_rt()
-                draw_data = canvas:get_draw_data()
-            end
-            frame_progress = 0
+    if frame_progress >= frame_time then
+        if update_rt then
+            update_rt()
+            draw_data = canvas:get_draw_data()
         end
+        frame_progress = 0
+    end
 
-        frame_progress = frame_progress + get_frame_time()
+    frame_progress = frame_progress + get_frame_time()
 
-        local canvas_width, canvas_height = canvas:get_size()
+    local canvas_width, canvas_height = canvas:get_size()
 
-        set_font(font)
-        local _, char_size = get_text_size(space_char)
+    set_font(font)
+    local _, char_size = get_text_size(space_char)
 
-        local origin_x = (screen_width() * .5) - (canvas_width * char_size) *  .25
-        local origin_y = (screen_height() * .5) - (canvas_height * char_size * .75) *  .5
+    local origin_x = (screen_width() * .5) - (canvas_width * char_size) *  .25
+    local origin_y = (screen_height() * .5) - (canvas_height * char_size * .75) *  .5
 
-        char_size = char_size * .75
+    char_size = char_size * .75
 
-        for row = 1, canvas_height do
-            local row_data = draw_data[row]
+    for row = 1, canvas_height do
+        local row_data = draw_data[row]
 
-            set_text_pos(origin_x, origin_y)
-            origin_y = origin_y + char_size
+        set_text_pos(origin_x, origin_y)
+        origin_y = origin_y + char_size
 
-            for col = 1, canvas_width * 2 do
-                local data = row_data[col]
-                if is_string(data) then
-                    draw_text(data)
-                else
-                    set_text_color(data)
-                end
+        for col = 1, canvas_width * 2 do
+            local data = row_data[col]
+            if is_string(data) then
+                draw_text(data)
+            else
+                set_text_color(data)
             end
         end
-    end)
-end
+    end
+end)
