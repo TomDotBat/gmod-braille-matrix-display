@@ -54,7 +54,6 @@ local function create_canvas() --Canvas class
     local min_row, max_row
     local min_col, max_col
     function tbl:get_size() return width, height end
-    function tbl:get_bounds() return min_row, max_row, min_col, max_col end
 
     local pixel_matrix
     function tbl:empty()
