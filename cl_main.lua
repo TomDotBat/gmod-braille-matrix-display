@@ -8,30 +8,34 @@ local space_char = braille_chars[1]
 local blank_color = color_black
 local min_color_val = 10
 
-local function create_pixel(str, braille, color) --Pixel class
-    local tbl = {}
+local pixel_meta = {} --Pixel class
+pixel_meta.__index = pixel_meta
 
-    str = str or space_char
+function pixel_meta:get_braille() return self.braille end
+function pixel_meta:set_braille(char_code)
+    self.braille = char_code
+    self.str = braille_chars[char_code] or space_char
+end
 
-    braille = braille or 0
-    function tbl:get_braille() return braille end
-    function tbl:set_braille(char_code)
-        braille = char_code
-        str = braille_chars[char_code] or space_char
+function pixel_meta:get_color() return self.color end
+function pixel_meta:add_color(col)
+    if self.color == blank_color then
+        self.color = col
+        return
     end
 
-    color = color or blank_color
-    function tbl:get_color() return color end
-    function tbl:add_color(col)
-        if color == blank_color then
-            color = col
-            return
-        end
+    local color = self.color
+    color.r = (color.r + col.r) * .5
+    color.g = (color.g + col.g) * .5
+    color.b = (color.b + col.b) * .5
+end
 
-        color.r = (color.r + col.r) * .5
-        color.g = (color.g + col.g) * .5
-        color.b = (color.b + col.b) * .5
-    end
+local function create_pixel(str, braille, color)
+    local tbl = setmetatable({}, pixel_meta)
+
+    tbl.str = str or space_char
+    tbl.braille = braille or 0
+    tbl.color = color or blank_color
 
     return tbl
 end
