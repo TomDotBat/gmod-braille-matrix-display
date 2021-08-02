@@ -32,11 +32,11 @@ function pixel_meta:add_color(col)
     color.b = (color.b + col.b) * .5
 end
 
-local function create_pixel(str, braille, color)
+local function create_pixel(color)
     local tbl = setmetatable({}, pixel_meta)
 
-    tbl.str = str or space_char
-    tbl.braille = braille or 0
+    tbl.str = space_char
+    tbl.braille = 0
     tbl.color = color or blank_color
 
     return tbl
@@ -114,7 +114,7 @@ local function create_canvas() --Canvas class
 
         local pixel = pixel_matrix[row][col]
         if not pixel then
-            pixel = create_pixel(nil, nil, color)
+            pixel = create_pixel(color)
             pixel_matrix[row][col] = pixel
         end
 
