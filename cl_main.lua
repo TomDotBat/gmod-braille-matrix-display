@@ -22,7 +22,7 @@ local function create_pixel(str, braille, color) --Pixel class
 
     color = color or blank_color
     function tbl:get_color() return color end
-    function tbl:add_color(col) 
+    function tbl:add_color(col)
         if color == blank_color then
             color = col
             return
