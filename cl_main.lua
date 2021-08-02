@@ -51,18 +51,10 @@ local function create_canvas() --Canvas class
     local tbl = {}
 
     local width, height
-    local min_row, max_row
-    local min_col, max_col
     function tbl:get_size() return width, height end
 
-    local pixel_matrix
-    function tbl:empty()
-        pixel_matrix = {}
-        width, height = 0, 0
-        min_row, max_row = 0, 0
-        min_col, max_col = 0, 0
-    end
-
+    local min_row, max_row
+    local min_col, max_col
     local function update_canvas_size(row, col)
         if row < min_row then min_row = row end
         if row > max_row then max_row = row end
@@ -73,26 +65,12 @@ local function create_canvas() --Canvas class
         height = -min_col + max_col
     end
 
-    local floor = math.floor
-    local band, bor = bit.band, bit.bor
-    function tbl:set_pixel(x, y, color)
-        local row, col = floor(y * .25), floor(x * .5)
-
-        if color.a < min_color_val then return end
-        if color.r < min_color_val and color.g < min_color_val and color.b < min_color_val then return end
-
-        if not pixel_matrix[row] then pixel_matrix[row] = {} end
-
-        local pixel = pixel_matrix[row][col]
-        if not pixel then
-            pixel = create_pixel(nil, nil, color)
-            pixel_matrix[row][col] = pixel
-        end
-
-        pixel:set_braille(bor(pixel:get_braille(), pixel_map[band(y, 3) + 1][band(x, 1) + 1]))
-        pixel:add_color(color)
-
-        update_canvas_size(col, row)
+    local pixel_matrix
+    function tbl:empty()
+        pixel_matrix = {}
+        width, height = 0, 0
+        min_row, max_row = 0, 0
+        min_col, max_col = 0, 0
     end
 
     function tbl:get_draw_data()
@@ -116,6 +94,28 @@ local function create_canvas() --Canvas class
         end
 
         return output
+    end
+
+    local floor = math.floor
+    local band, bor = bit.band, bit.bor
+    function tbl:set_pixel(x, y, color)
+        local row, col = floor(y * .25), floor(x * .5)
+
+        if color.a < min_color_val then return end
+        if color.r < min_color_val and color.g < min_color_val and color.b < min_color_val then return end
+
+        if not pixel_matrix[row] then pixel_matrix[row] = {} end
+
+        local pixel = pixel_matrix[row][col]
+        if not pixel then
+            pixel = create_pixel(nil, nil, color)
+            pixel_matrix[row][col] = pixel
+        end
+
+        pixel:set_braille(bor(pixel:get_braille(), pixel_map[band(y, 3) + 1][band(x, 1) + 1]))
+        pixel:add_color(color)
+
+        update_canvas_size(col, row)
     end
 
     tbl:empty()
