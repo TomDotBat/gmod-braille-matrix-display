@@ -8,30 +8,36 @@ local space_char = braille_chars[1]
 local blank_color = color_black
 local min_color_val = 10
 
-local function create_pixel(str, braille, color) --Pixel class
-    local tbl = {}
+local pixel_meta = {} --Pixel class
+pixel_meta.__index = pixel_meta
 
-    str = str or space_char
+function pixel_meta:get_str() return self.str end
 
-    braille = braille or 0
-    function tbl:get_braille() return braille end
-    function tbl:set_braille(char_code)
-        braille = char_code
-        str = braille_chars[char_code] or space_char
+function pixel_meta:get_braille() return self.braille end
+function pixel_meta:set_braille(char_code)
+    self.braille = char_code
+    self.str = braille_chars[char_code] or space_char
+end
+
+function pixel_meta:get_color() return self.color end
+function pixel_meta:add_color(col)
+    if self.color == blank_color then
+        self.color = col
+        return
     end
 
-    color = color or blank_color
-    function tbl:get_color() return color end
-    function tbl:add_color(col) 
-        if color == blank_color then
-            color = col
-            return
-        end
+    local color = self.color
+    color.r = (color.r + col.r) * .5
+    color.g = (color.g + col.g) * .5
+    color.b = (color.b + col.b) * .5
+end
 
-        color.r = (color.r + col.r) * .5
-        color.g = (color.g + col.g) * .5
-        color.b = (color.b + col.b) * .5
-    end
+local function create_pixel(color)
+    local tbl = setmetatable({}, pixel_meta)
+
+    tbl.str = space_char
+    tbl.braille = 0
+    tbl.color = color or blank_color
 
     return tbl
 end
@@ -47,10 +53,19 @@ local function create_canvas() --Canvas class
     local tbl = {}
 
     local width, height
+    function tbl:get_size() return width, height end
+
     local min_row, max_row
     local min_col, max_col
-    function tbl:get_size() return width, height end
-    function tbl:get_bounds() return min_row, max_row, min_col, max_col end
+    local function update_canvas_size(row, col)
+        if row < min_row then min_row = row end
+        if row > max_row then max_row = row end
+        if col < min_col then min_col = col end
+        if col > max_col then max_col = col end
+
+        width = -min_row + max_row
+        height = -min_col + max_col
+    end
 
     local pixel_matrix
     function tbl:empty()
@@ -60,14 +75,31 @@ local function create_canvas() --Canvas class
         min_col, max_col = 0, 0
     end
 
-    local function update_canvas_size(row, col)
-        if row < min_row then min_row = row end
-        if row > max_row then max_row = row end
-        if col < min_col then min_col = col end
-        if col > max_col then max_col = col end
+    local insert = table.insert
+    function tbl:get_draw_data()
+        local output = {}
+        local matrix = pixel_matrix
 
-        width = -min_row + max_row
-        height = -min_col + max_col
+        for row = 1, height do
+            local row_data = {}
+            output[row] = row_data
+
+            local matrix_row = matrix[row]
+            if matrix_row then
+                for col = 1, width do
+                    local pixel = matrix_row[col]
+                    if pixel then
+                        insert(row_data, pixel:get_color())
+                        insert(row_data, pixel:get_str())
+                    else
+                        insert(row_data, blank_color)
+                        insert(row_data, space_char)
+                    end
+                end
+            end
+        end
+
+        return output
     end
 
     local floor = math.floor
@@ -82,7 +114,7 @@ local function create_canvas() --Canvas class
 
         local pixel = pixel_matrix[row][col]
         if not pixel then
-            pixel = create_pixel(nil, nil, color)
+            pixel = create_pixel(color)
             pixel_matrix[row][col] = pixel
         end
 
@@ -90,29 +122,6 @@ local function create_canvas() --Canvas class
         pixel:add_color(color)
 
         update_canvas_size(col, row)
-    end
-
-    function tbl:get_draw_data()
-        local output = {}
-        local matrix = pixel_matrix
-
-        for row = 1, height do
-            local row_data = {}
-            output[row] = row_data
-
-            for col = 1, width do
-                if matrix[row] and matrix[row][col] then
-                    local pixel = matrix[row][col]
-                    table.insert(row_data, pixel:get_color())
-                    table.insert(row_data, pixel:get_str())
-                else
-                    table.insert(row_data, blank_color)
-                    table.insert(row_data, space_char)
-                end
-            end
-        end
-
-        return output
     end
 
     tbl:empty()
@@ -176,82 +185,80 @@ timer.Create("DumbIdea.WaitForHTMLMat", .5, 10, function() --HTML mat isn't read
 end)
 
 
-do --Draw stuff
-    local font = "DermaLarge"
+local font = "DermaLarge"
 
-    local frame_time = 1 / video_frame_rate
-    local frame_progress = 0
+local frame_time = 1 / video_frame_rate
+local frame_progress = 0
 
-    local draw_data = {}
+local draw_data = {}
 
-    local is_string = isstring
-    local get_frame_time = FrameTime
-    local screen_width, screen_height = ScrW, ScrH
-    local set_draw_color, draw_rect = surface.SetDrawColor, surface.DrawRect
-    local set_font, get_text_size = surface.SetFont, surface.GetTextSize
-    local set_text_pos, set_text_color, draw_text = surface.SetTextPos, surface.SetTextColor, surface.DrawText
+local is_string = isstring
+local get_frame_time = FrameTime
+local screen_width, screen_height = ScrW, ScrH
+local set_draw_color, draw_rect = surface.SetDrawColor, surface.DrawRect
+local set_font, get_text_size = surface.SetFont, surface.GetTextSize
+local set_text_pos, set_text_color, draw_text = surface.SetTextPos, surface.SetTextColor, surface.DrawText
 
-    --hook.Add("Think", "dumb_idea", function() --Draws in the console
-    --    if frame_progress >= frame_time then
-    --        if update_rt then
-    --            update_rt()
-    --            draw_data = canvas:get_draw_data()
+--hook.Add("Think", "dumb_idea", function() --Draws in the console
+--    if frame_progress >= frame_time then
+--        if update_rt then
+--            update_rt()
+--            draw_data = canvas:get_draw_data()
 --
 --
-    --            local canvas_width, canvas_height = canvas:get_size()
-    --            for row = 1, canvas_height do
-    --                local row_data = draw_data[row]
+--            local canvas_width, canvas_height = canvas:get_size()
+--            for row = 1, canvas_height do
+--                local row_data = draw_data[row]
 --
-    --                for col = 1, canvas_width * 2, 2 do
-    --                    MsgC(row_data[col], row_data[col + 1])
-    --                end
-    --                Msg("\n")
-    --            end
-    --        end
-    --        frame_progress = 0
-    --    end
+--                for col = 1, canvas_width * 2, 2 do
+--                    MsgC(row_data[col], row_data[col + 1])
+--                end
+--                Msg("\n")
+--            end
+--        end
+--        frame_progress = 0
+--    end
 --
-    --    frame_progress = frame_progress + get_frame_time()
-    --end)
+--    frame_progress = frame_progress + get_frame_time()
+--end)
 
-    hook.Add("HUDPaint", "dumb_idea", function() --Draws in the center of the screen
-        set_draw_color(0, 0, 0, 255)
-        draw_rect(0, 0, screen_width(), screen_height())
+hook.Add("HUDPaint", "dumb_idea", function() --Draws in the center of the screen
+    set_draw_color(0, 0, 0, 255)
+    draw_rect(0, 0, screen_width(), screen_height())
 
-        if frame_progress >= frame_time then
-            if update_rt then
-                update_rt()
-                draw_data = canvas:get_draw_data()
-            end
-            frame_progress = 0
+    if frame_progress >= frame_time then
+        if update_rt then
+            update_rt()
+            draw_data = canvas:get_draw_data()
         end
+        frame_progress = 0
+    end
 
-        frame_progress = frame_progress + get_frame_time()
+    frame_progress = frame_progress + get_frame_time()
 
-        local canvas_width, canvas_height = canvas:get_size()
+    local canvas_width, canvas_height = canvas:get_size()
 
-        set_font(font)
-        local _, char_size = get_text_size(space_char)
+    set_font(font)
+    local _, char_size = get_text_size(space_char)
 
-        local origin_x = (screen_width() * .5) - (canvas_width * char_size) *  .25
-        local origin_y = (screen_height() * .5) - (canvas_height * char_size * .75) *  .5
+    local origin_x = (screen_width() * .5) - (canvas_width * char_size) *  .25
+    local origin_y = (screen_height() * .5) - (canvas_height * char_size * .75) *  .5
 
-        char_size = char_size * .75
+    char_size = char_size * .75
 
-        for row = 1, canvas_height do
-            local row_data = draw_data[row]
+    for row = 1, canvas_height do
+        local row_data = draw_data[row]
 
-            set_text_pos(origin_x, origin_y)
-            origin_y = origin_y + char_size
+        set_text_pos(origin_x, origin_y)
+        origin_y = origin_y + char_size
 
-            for col = 1, canvas_width * 2 do
-                local data = row_data[col]
-                if is_string(data) then
-                    draw_text(data)
-                else
-                    set_text_color(data)
-                end
+        for col = 1, canvas_width * 2 do
+            local data = row_data[col]
+            if is_string(data) then
+                draw_text(data)
+            elseif data then
+                set_text_color(data)
             end
         end
-    end)
-end
+    end
+end)
