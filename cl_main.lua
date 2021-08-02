@@ -11,6 +11,8 @@ local min_color_val = 10
 local pixel_meta = {} --Pixel class
 pixel_meta.__index = pixel_meta
 
+function pixel_meta:get_str() return self.str end
+
 function pixel_meta:get_braille() return self.braille end
 function pixel_meta:set_braille(char_code)
     self.braille = char_code
@@ -87,6 +89,7 @@ local function create_canvas() --Canvas class
                 for col = 1, width do
                     local pixel = matrix_row[col]
                     if pixel then
+                        PrintTable(pixel)
                         insert(row_data, pixel:get_color())
                         insert(row_data, pixel:get_str())
                     else
