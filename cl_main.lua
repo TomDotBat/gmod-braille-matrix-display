@@ -256,7 +256,7 @@ hook.Add("HUDPaint", "dumb_idea", function() --Draws in the center of the screen
             local data = row_data[col]
             if is_string(data) then
                 draw_text(data)
-            else
+            elseif data then
                 set_text_color(data)
             end
         end
