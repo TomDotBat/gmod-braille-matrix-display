@@ -89,7 +89,6 @@ local function create_canvas() --Canvas class
                 for col = 1, width do
                     local pixel = matrix_row[col]
                     if pixel then
-                        PrintTable(pixel)
                         insert(row_data, pixel:get_color())
                         insert(row_data, pixel:get_str())
                     else
