@@ -82,14 +82,17 @@ local function create_canvas() --Canvas class
             local row_data = {}
             output[row] = row_data
 
-            for col = 1, width do
-                if matrix[row] and matrix[row][col] then
-                    local pixel = matrix[row][col]
-                    insert(row_data, pixel:get_color())
-                    insert(row_data, pixel:get_str())
-                else
-                    insert(row_data, blank_color)
-                    insert(row_data, space_char)
+            local matrix_row = matrix[row]
+            if matrix_row then
+                for col = 1, width do
+                    local pixel = matrix_row[col]
+                    if pixel then
+                        insert(row_data, pixel:get_color())
+                        insert(row_data, pixel:get_str())
+                    else
+                        insert(row_data, blank_color)
+                        insert(row_data, space_char)
+                    end
                 end
             end
         end
